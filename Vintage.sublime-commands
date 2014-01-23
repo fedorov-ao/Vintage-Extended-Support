@@ -16,5 +16,13 @@
         "caption": ":$ - EOF",
         "command": "move_to",
         "args": {"to": "eof"}
+    },
+    {
+        "caption": ":q - Close",
+        "command": "close_window"
+    },
+    {
+        "caption": ":wq - Close",
+        "command": "vi_save_and_exit"
     }
 ]
