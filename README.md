@@ -11,7 +11,7 @@ Stick to this one if you really can't get used to the subtle difference between 
 
 ## How to install
 
-Via package control: install `VintageES` (not yet)
+Via package control: install `VintageES` (not yet, when [this](https://github.com/wbond/package_control_channel/pull/4899) is merged)
 
 --------------------
 
