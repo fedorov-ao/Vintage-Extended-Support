@@ -1023,7 +1023,8 @@ class ViSetBookmark(sublime_plugin.TextCommand):
 
 class ViSelectBookmark(sublime_plugin.TextCommand):
     def run(self, edit, character, select_bol=False):
-        self.view.run_command('select_all_bookmarks', {'name': "bookmark_" + character})
+        if self.view.get_regions("bookmark_" + character):
+            self.view.run_command('select_all_bookmarks', {'name': "bookmark_" + character})
         if select_bol:
             sels = list(self.view.sel())
             self.view.sel().clear()
