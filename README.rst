@@ -3,7 +3,7 @@ Switch to Vintageous
 
 99% of you won't have problem switching to `vintageous`_
 
-Stick to this one if you really can't get used to the subtle difference between the two
+Stick to this one if you really can't get used to the subtle difference between the two (myself is trying)
 
 .. _vintageous: https://github.com/guillermooo/Vintageous
 
