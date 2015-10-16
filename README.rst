@@ -1,3 +1,14 @@
+Switch to Vintageous
+====================
+
+99% of you won't have problem switching to `vintageous`_
+
+Stick to this one if you really can't get used to the subtle difference between the two
+
+.. _vintageous: https://github.com/guillermooo/Vintageous
+
+--------------------
+
 `Vintage`_ is a vi editing package for Sublime Text 2.
 
 .. _Vintage: http://www.sublimetext.com/docs/2/vintage.html
