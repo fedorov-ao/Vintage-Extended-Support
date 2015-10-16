@@ -1,24 +1,4 @@
 [
-    { "keys": ["left"], "command": "set_motion", "args": {
-        "motion": "vi_move_by_characters_in_line",
-        "motion_args": {"forward": false, "extend": true }},
-        "context": [{"key": "setting.command_mode"}]
-    },
-    { "keys": ["right"], "command": "set_motion", "args": {
-        "motion": "vi_move_by_characters_in_line",
-        "motion_args": {"forward": true, "extend": true, "visual": false }},
-        "context": [{"key": "setting.command_mode"}]
-    },
-    { "keys": ["up"], "command": "set_motion", "args": {
-        "motion": "move",
-        "motion_args": {"by": "lines", "forward": false, "extend": true }},
-        "context": [{"key": "setting.command_mode"}]
-    },
-    { "keys": ["down"], "command": "set_motion", "args": {
-        "motion": "move",
-        "motion_args": {"by": "lines", "forward": true, "extend": true }},
-        "context": [{"key": "setting.command_mode"}]
-    },
 
     { "keys": ["ctrl+left"], "command": "set_motion", "args": {
         "motion": "move",
