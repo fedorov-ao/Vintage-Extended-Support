@@ -22,7 +22,7 @@
         "command": "close_window"
     },
     {
-        "caption": ":wq - Close",
+        "caption": ":x - Save and Close",
         "command": "vi_save_and_exit"
     }
 ]
