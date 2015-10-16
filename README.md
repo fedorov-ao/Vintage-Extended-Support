@@ -9,6 +9,10 @@ Stick to this one if you really can't get used to the subtle difference between 
 - `vw` or any `v(something)`
 - add what you miss from vintage
 
+## How to install
+
+Via package control: install `VintageES` (not yet)
+
 --------------------
 
 [Vintage](http://www.sublimetext.com/docs/3/vintage.html) is a vi editing package for Sublime Text 3.
