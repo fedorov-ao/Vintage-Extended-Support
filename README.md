@@ -1,8 +1,12 @@
-# Switch to Vintageous
+# Vintage Extended Support
+
+## What about Vintageous?
 
 Most of you won't have problem switching to [vintageous](https://github.com/guillermooo/Vintageous)
 
 Stick to this one if you really can't get used to the subtle difference between the two (like me)
+
+Also, I personally find Vintage integrates with Sublime better (well, it's from Sublime)
 
 ## Some differences
 - `n` with selection
