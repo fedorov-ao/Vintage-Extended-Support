@@ -88,11 +88,11 @@
 	{ "keys": ["Z", "Z"], "command" : "vi_save_and_exit", "context": [{"key": "setting.command_mode"}] },
 
 	{ "keys": ["i"], "command": "enter_insert_mode",
-	  "context":
-	  [
+		"context":
+		[
 			{"key": "setting.command_mode"},
 			{"key": "selection_empty"}
-	  ]
+		]
 	},
 
 	{ "keys": ["I"], "command": "enter_insert_mode", "args":
@@ -444,20 +444,20 @@
 		"context": [{"key": "setting.command_mode"}]
 	},
 
-        {
-            "keys": ["g", "t"], "command": "next_view",
-            "context": [
-                { "key": "setting.command_mode", "operand": true },
-                { "key": "setting.is_widget", "operand": false }
-            ]
-        },
+	{
+			"keys": ["g", "t"], "command": "next_view",
+			"context": [
+					{ "key": "setting.command_mode", "operand": true },
+					{ "key": "setting.is_widget", "operand": false }
+			]
+	},
 
-        { "keys": ["g", "T"], "command": "prev_view",
-            "context": [
-                { "key": "setting.command_mode", "operand": true },
-                { "key": "setting.is_widget", "operand": false }
-            ]
-        },
+	{ "keys": ["g", "T"], "command": "prev_view",
+			"context": [
+					{ "key": "setting.command_mode", "operand": true },
+					{ "key": "setting.is_widget", "operand": false }
+			]
+	},
 
 	{ "keys": [">"], "command": "set_action", "args": {"action": "vi_indent", "description": "Indent"},
 		"context": [{"key": "setting.command_mode"}]
