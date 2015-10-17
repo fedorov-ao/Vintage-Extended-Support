@@ -15,7 +15,7 @@ Also, I personally find Vintage integrates with Sublime better (well, it's from 
 
 ## How to install
 
-Via package control: install `VintageES` (not yet, when [this](https://github.com/wbond/package_control_channel/pull/4899) is merged)
+Via package control: install `VintageES`
 
 --------------------
 
