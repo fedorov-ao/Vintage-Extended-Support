@@ -1,5 +1,9 @@
 # Vintage Extended Support
 
+## No longer maintained since Nov. 8th, 2017
+
+https://github.com/SublimeText/Vintage-Extended-Support is great! Use that!
+
 ## What about Vintageous?
 
 Most of you won't have problem switching to [vintageous](https://github.com/guillermooo/Vintageous)
