@@ -2,7 +2,7 @@
 
 ## No longer maintained since Nov. 8th, 2017
 
-https://github.com/SublimeText/Vintage-Extended-Support is great! Use that!
+https://github.com/NeoVintageous/NeoVintageous is great! Use that!
 
 ## What about Vintageous?
 
