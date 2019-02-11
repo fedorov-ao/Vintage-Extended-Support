@@ -1,5 +1,6 @@
 import sublime, sublime_plugin
 import os.path
+from os.path import dirname, realpath
 
 # Normal: Motions apply to all the characters they select
 MOTION_MODE_NORMAL = 0
@@ -30,6 +31,35 @@ class InputState:
 
 g_input_state = InputState()
 
+# TODO Support several mappings?
+class MappingManager:
+    def __init__(self):
+        self.state = False
+        self.name = None
+        self.mapping = None
+    def set_mapping(self, name, mapping):
+        self.name = name
+        self.mapping = mapping
+    def get_name(self):
+        return self.name
+    def get_state(self):
+       return self.state
+    def set_state(self, s):
+        self.state = s
+    def toggle(self):
+        assert(self.state is not None)
+        self.state = not self.state
+    def get_char(self, c):
+        assert(self.state is not None)
+        assert(self.mapping is not None)
+        return self.mapping[c] if (self.state and c in self.mapping) else c
+
+g_mapping_manager = MappingManager()
+# TODO Load from file in plugin_loaded()
+g_mapping_manager.set_mapping('ru', {',': 'б', '.': 'ю', '"': 'Э', "'": 'э', ':': 'Ж', ';': 'ж', '<': 'Б', '>': 'Ю', 'H': 'Р', 'I': 'Ш', 'J': 'О', 'K': 'Л', 'L': 'Д', 'M': 'Ь', 'N': 'Т', 'O': 'Щ', 'A': 'Ф', 'B': 'И', 'C': 'С', 'D': 'В', 'E': 'У', 'F': 'А', 'G': 'П', 'X': 'Ч', 'Y': 'Н', 'Z': 'Я', '[': 'х', ']': 'ъ', 'P': 'З', 'Q': 'Й', 'R': 'К', 'S': 'Ы', 'T': 'Е', 'U': 'Г', 'V': 'М', 'W': 'Ц', 'h': 'р', 'i': 'ш', 'j': 'о', 'k': 'л', 'l': 'д', 'm': 'ь', 'n': 'т', 'o': 'щ', 'a': 'ф', 'b': 'и', 'c': 'с', 'd': 'в', 'e': 'у', 'f': 'а', 'g': 'п', 'x': 'ч', 'y': 'н', 'z': 'я', '{': 'Х', '}': 'Ъ', 'p': 'з', 'q': 'й', 'r': 'к', 's': 'ы', 't': 'е', 'u': 'г', 'v': 'м', 'w': 'ц' })
+
+MM_PLUGIN_DIR = dirname(realpath(__file__))
+
 # Updates the status bar to reflect the current mode and input state
 def update_status_line(view):
     desc = []
@@ -59,6 +89,9 @@ def update_status_line(view):
             desc.insert(1, 'Register "' + g_input_state.register + '"')
     else:
         desc = ['INSERT MODE']
+
+    if g_mapping_manager.get_state():
+        desc.append(g_mapping_manager.get_name())
 
     view.set_status('mode', ' - '.join(desc))
 
@@ -287,7 +320,7 @@ class SetMotion(sublime_plugin.TextCommand):
         # Pass the character, if any, onto the motion command.
         # This is required for 'f', 't', etc
         if character is not None:
-            motion_args['character'] = character
+            motion_args['character'] = g_mapping_manager.get_char(character)
 
         g_input_state.motion_command = motion
         g_input_state.motion_command_args = motion_args
@@ -929,6 +962,7 @@ class PasteFromRegisterCommand(sublime_plugin.TextCommand):
 
 class ReplaceCharacter(sublime_plugin.TextCommand):
     def run(self, edit, character):
+        character = g_mapping_manager.get_char(character)
         new_sel = []
         created_new_line = False
         for s in reversed(self.view.sel()):
@@ -1126,4 +1160,17 @@ class PrintRegistersCommand(sublime_plugin.TextCommand):
         for name,contents in g_registers.items():
             for t in [('\n', '^M'), ('\t', '^I')]:
                 contents = contents.replace(t[0], t[1])
-            self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})          
+            self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})
+
+class InsertCharCommand(sublime_plugin.TextCommand):
+    def run(self, edit, character):
+        c = g_mapping_manager.get_char(character)
+        for region in self.view.sel():
+            if not region.empty():
+                self.view.erase(edit, region)
+            self.view.insert(edit, region.begin(), c)
+
+class ToggleMappingStateCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        g_mapping_manager.toggle()
+        update_status_line(self.view)

@@ -1091,5 +1091,14 @@
 			{"key": "setting.command_mode"},
 			{"key": "vi_has_repeat_digit", "operand": false}
 		]
-	}
+	},
+
+	{ "keys": ["<character>"], "command": "insert_char",
+		"context":
+		[
+			{ "key": "setting.command_mode", "operand": false },
+		]
+	},
+
+	{ "keys": ["ctrl+6"], "command": "toggle_mapping_state", },
 ]
