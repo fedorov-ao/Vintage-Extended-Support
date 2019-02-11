@@ -1,6 +1,7 @@
 import sublime, sublime_plugin
 import os.path
 from os.path import dirname, realpath
+import re
 
 # Normal: Motions apply to all the characters they select
 MOTION_MODE_NORMAL = 0
@@ -46,19 +47,47 @@ class MappingManager:
        return self.state
     def set_state(self, s):
         self.state = s
-    def toggle(self):
+    def toggle_state(self):
         assert(self.state is not None)
         self.state = not self.state
-    def get_char(self, c):
-        assert(self.state is not None)
-        assert(self.mapping is not None)
+    def map_char(self, c):
+        if self.name is None or self.mapping is None:
+            return c
         return self.mapping[c] if (self.state and c in self.mapping) else c
 
 g_mapping_manager = MappingManager()
-# TODO Load from file in plugin_loaded()
-g_mapping_manager.set_mapping('ru', {',': 'б', '.': 'ю', '"': 'Э', "'": 'э', ':': 'Ж', ';': 'ж', '<': 'Б', '>': 'Ю', 'H': 'Р', 'I': 'Ш', 'J': 'О', 'K': 'Л', 'L': 'Д', 'M': 'Ь', 'N': 'Т', 'O': 'Щ', 'A': 'Ф', 'B': 'И', 'C': 'С', 'D': 'В', 'E': 'У', 'F': 'А', 'G': 'П', 'X': 'Ч', 'Y': 'Н', 'Z': 'Я', '[': 'х', ']': 'ъ', 'P': 'З', 'Q': 'Й', 'R': 'К', 'S': 'Ы', 'T': 'Е', 'U': 'Г', 'V': 'М', 'W': 'Ц', 'h': 'р', 'i': 'ш', 'j': 'о', 'k': 'л', 'l': 'д', 'm': 'ь', 'n': 'т', 'o': 'щ', 'a': 'ф', 'b': 'и', 'c': 'с', 'd': 'в', 'e': 'у', 'f': 'а', 'g': 'п', 'x': 'ч', 'y': 'н', 'z': 'я', '{': 'Х', '}': 'Ъ', 'p': 'з', 'q': 'й', 'r': 'к', 's': 'ы', 't': 'е', 'u': 'г', 'v': 'м', 'w': 'ц' })
+
+def parse_mapping_file(fname):
+    # let b:keymap_name = "ru"
+    name_re = re.compile('let\s*b\:keymap_name\s*=\s*"(.*?)"')
+    map_re = re.compile('^(\w)\s*(\w).*$')
+
+    name = None
+    mapping = {}
+    with open(fname) as fin:
+        for l in fin:
+           m = name_re.search(l)
+           if m is not None:
+                name = m.group(1)
+           m = map_re.match(l)
+           if m is not None:
+                mapping[m.group(1)] = m.group(2)
+
+    return {'name' : name, 'mapping' : mapping}
 
 MM_PLUGIN_DIR = dirname(realpath(__file__))
+
+def load_mapping():
+    # mapping_name = "russian-jcukenwin"
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    mapping_name = settings.get('vintage_mapping')
+    if mapping_name is None:
+        print('No mapping specified')
+        return
+    full_fname = os.path.join(MM_PLUGIN_DIR, mapping_name + '.vim')
+    mapping = parse_mapping_file(full_fname)
+    g_mapping_manager.set_mapping(mapping['name'], mapping['mapping'])
+    print('Mapping "' + mapping['name'] + '" loaded from ' + full_fname)
 
 # Updates the status bar to reflect the current mode and input state
 def update_status_line(view):
@@ -143,6 +172,7 @@ def plugin_loaded():
                 v.settings().set('command_mode', True)
                 v.settings().set('inverse_caret_state', True)
             update_status_line(v)
+    load_mapping()
 
 # Ensures the input state is reset when the view changes, or the user selects
 # with the mouse or non-vintage key bindings
@@ -320,7 +350,7 @@ class SetMotion(sublime_plugin.TextCommand):
         # Pass the character, if any, onto the motion command.
         # This is required for 'f', 't', etc
         if character is not None:
-            motion_args['character'] = g_mapping_manager.get_char(character)
+            motion_args['character'] = g_mapping_manager.map_char(character)
 
         g_input_state.motion_command = motion
         g_input_state.motion_command_args = motion_args
@@ -962,7 +992,7 @@ class PasteFromRegisterCommand(sublime_plugin.TextCommand):
 
 class ReplaceCharacter(sublime_plugin.TextCommand):
     def run(self, edit, character):
-        character = g_mapping_manager.get_char(character)
+        character = g_mapping_manager.map_char(character)
         new_sel = []
         created_new_line = False
         for s in reversed(self.view.sel()):
@@ -1164,13 +1194,17 @@ class PrintRegistersCommand(sublime_plugin.TextCommand):
 
 class InsertCharCommand(sublime_plugin.TextCommand):
     def run(self, edit, character):
-        c = g_mapping_manager.get_char(character)
+        c = g_mapping_manager.map_char(character)
         for region in self.view.sel():
-            if not region.empty():
-                self.view.erase(edit, region)
-            self.view.insert(edit, region.begin(), c)
+            if c in '"\'' and not region.empty():
+                self.view.insert(edit, region.begin(), c)
+                self.view.insert(edit, region.end()+1, c)
+            else:
+                if not region.empty():
+                    self.view.erase(edit, region)
+                self.view.insert(edit, region.begin(), c)
 
 class ToggleMappingStateCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        g_mapping_manager.toggle()
+        g_mapping_manager.toggle_state()
         update_status_line(self.view)
