@@ -1,3 +1,26 @@
+# axf 09.02.2019
+# Updated to support vim-like keyboard mappings
+# The idea is to switch keyboard mapping internally in Sublime text editor, not system-wide
+# Thus won't need to bloat Default.sublime-keymap file by duplicating layout-dependent mappings 
+# Vim-based shortcuts and combinations will work naturally
+
+# Can specify several mappings
+# Usage:
+# Put vim mapping files (i.e. russian-jcukenwin.vim, kazakh-jcuken.vim) into Vintage/keymap directory
+# Add "vintage_mappings" parameter into user settings. The value of this parameter is a list of required mappings
+# (i.e. "vintage_mappings" : [ "russian-jcukenwin", "kazakh-jcuken" ])
+# Cycle through mappings by CTRL-6; the mapping is off by default and is turned off again after list is exhausted
+
+# Limitations
+# CapsLock does not work properly
+# Autocomplete window is not opened automatically (still accessible by Alt-/)
+
+# TODO
+# Support "dead key" mapping, when several latin characters correspond to one mapped character
+# Eable character specification by keycode
+
+# Added registers window invoked by :reg
+
 import sublime, sublime_plugin
 import os.path
 from os.path import dirname, realpath
@@ -32,62 +55,65 @@ class InputState:
 
 g_input_state = InputState()
 
-# TODO Support several mappings?
-class MappingManager:
+class MultiMappingManager:
     def __init__(self):
-        self.state = False
-        self.name = None
-        self.mapping = None
-    def set_mapping(self, name, mapping):
-        self.name = name
-        self.mapping = mapping
+        self.id = -1
+        self.mappings = []
+        self.current = None
+    def add_mapping(self, name, mapping):
+        self.mappings.append({'name' : name, 'mapping' : mapping})
     def get_name(self):
-        return self.name
-    def get_state(self):
-       return self.state
-    def set_state(self, s):
-        self.state = s
-    def toggle_state(self):
-        assert(self.state is not None)
-        self.state = not self.state
+        return None if self.id == -1 else self.mappings[self.id]['name']
+    def next_mapping(self):
+        self.id+= 1
+        if self.id == len(self.mappings):
+            self.id = -1
+            self.current = None
+        else:
+            self.current = self.mappings[self.id]['mapping']
     def map_char(self, c):
-        if self.name is None or self.mapping is None:
-            return c
-        return self.mapping[c] if (self.state and c in self.mapping) else c
+        return self.current.get(c, c) if self.current is not None else c
 
-g_mapping_manager = MappingManager()
+g_mapping_manager = MultiMappingManager()
 
 def parse_mapping_file(fname):
     # let b:keymap_name = "ru"
     name_re = re.compile('let\s*b\:keymap_name\s*=\s*"(.*?)"')
-    map_re = re.compile('^(\w)\s*(\w).*$')
+    # F А   CYRILLIC CAPITAL LETTER A
+    # \"    Э   CYRILLIC CAPITAL LETTER E
+    map_re = re.compile('^(\S*)\s*(\S*)\s*.*$')
 
     name = None
     mapping = {}
-    with open(fname) as fin:
-        for l in fin:
-           m = name_re.search(l)
-           if m is not None:
-                name = m.group(1)
-           m = map_re.match(l)
-           if m is not None:
-                mapping[m.group(1)] = m.group(2)
-
-    return {'name' : name, 'mapping' : mapping}
+    try:
+        with open(fname) as fin:
+            for l in fin:
+               m = name_re.search(l)
+               if m is not None:
+                    name = m.group(1)
+               m = map_re.match(l)
+               if m is not None:
+                    mapping[m.group(1).lstrip('\\')] = m.group(2).lstrip('\\')
+            return {'name' : name, 'mapping' : mapping}
+    except:
+        return None
 
 MM_PLUGIN_DIR = dirname(realpath(__file__))
 
-def load_mapping():
-    # mapping_name = "russian-jcukenwin"
+def load_mappings():
     settings = sublime.load_settings('Preferences.sublime-settings')
-    mapping_name = settings.get('vintage_mapping')
-    if mapping_name is None:
-        print('No mapping specified')
+    mapping_names = settings.get('vintage_mappings')
+    if mapping_names is None or len(mapping_names) == 0:
+        print('No mappings specified')
         return
-    full_fname = os.path.join(MM_PLUGIN_DIR, mapping_name + '.vim')
-    mapping = parse_mapping_file(full_fname)
-    g_mapping_manager.set_mapping(mapping['name'], mapping['mapping'])
-    print('Mapping "' + mapping['name'] + '" loaded from ' + full_fname)
+    for mn in mapping_names:
+        full_fname = os.path.join(MM_PLUGIN_DIR, 'keymap', mn + '.vim')
+        mapping = parse_mapping_file(full_fname)
+        if mapping is None:
+            print('No file for mapping "' + mn + '"')
+            continue
+        g_mapping_manager.add_mapping(mapping['name'], mapping['mapping'])
+        print('Mapping "' + mapping['name'] + '" loaded from ' + full_fname)
 
 # Updates the status bar to reflect the current mode and input state
 def update_status_line(view):
@@ -119,8 +145,9 @@ def update_status_line(view):
     else:
         desc = ['INSERT MODE']
 
-    if g_mapping_manager.get_state():
-        desc.append(g_mapping_manager.get_name())
+    mapping_name = g_mapping_manager.get_name()
+    if mapping_name is not None:
+        desc.append(mapping_name)
 
     view.set_status('mode', ' - '.join(desc))
 
@@ -166,13 +193,13 @@ def plugin_unloaded():
             v.erase_status('mode')
 
 def plugin_loaded():
+    load_mappings()
     for w in sublime.windows():
         for v in w.views():
             if v.settings().get("vintage_start_in_command_mode"):
                 v.settings().set('command_mode', True)
                 v.settings().set('inverse_caret_state', True)
             update_status_line(v)
-    load_mapping()
 
 # Ensures the input state is reset when the view changes, or the user selects
 # with the mouse or non-vintage key bindings
@@ -193,6 +220,8 @@ class InputStateTracker(sublime_plugin.EventListener):
         view.run_command('unmark_undo_groups_for_gluing')
 
     def on_selection_modified(self, view):
+        if not view.settings().get('command_mode'):
+            return
         reset_input_state(view, False)
         # Get out of visual line mode if the selection has changed, e.g., due
         # to clicking with the mouse
@@ -1190,7 +1219,7 @@ class PrintRegistersCommand(sublime_plugin.TextCommand):
         for name,contents in g_registers.items():
             for t in [('\n', '^M'), ('\t', '^I')]:
                 contents = contents.replace(t[0], t[1])
-            self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})
+        self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})
 
 g_pairs = {
     '"' : '"',
@@ -1213,7 +1242,7 @@ class InsertCharCommand(sublime_plugin.TextCommand):
                     self.view.erase(edit, region)
                 self.view.insert(edit, region.begin(), c)
 
-class ToggleMappingStateCommand(sublime_plugin.TextCommand):
-    def run(self, edit):
-        g_mapping_manager.toggle_state()
+class NextMappingCommand(sublime_plugin.TextCommand):
+     def run(self, edit):
+        g_mapping_manager.next_mapping()
         update_status_line(self.view)

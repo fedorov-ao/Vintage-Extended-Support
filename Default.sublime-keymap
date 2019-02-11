@@ -1093,6 +1093,7 @@
 		]
 	},
 
+	//Mapping
 	{ "keys": ["<character>"], "command": "insert_char",
 		"context":
 		[
@@ -1100,5 +1101,5 @@
 		]
 	},
 
-	{ "keys": ["ctrl+6"], "command": "toggle_mapping_state", },
+	{ "keys": ["ctrl+6"], "command": "next_mapping", },
 ]
