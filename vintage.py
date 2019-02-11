@@ -1192,13 +1192,22 @@ class PrintRegistersCommand(sublime_plugin.TextCommand):
                 contents = contents.replace(t[0], t[1])
             self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})
 
+g_pairs = {
+    '"' : '"',
+    '\'' : '\'',
+    '(' : ')',
+    '{' : '}',
+    '[' : ']',
+    '<' : '>',
+}
+
 class InsertCharCommand(sublime_plugin.TextCommand):
     def run(self, edit, character):
         c = g_mapping_manager.map_char(character)
         for region in self.view.sel():
-            if c in '"\'' and not region.empty():
+            if c in g_pairs and not region.empty():
                 self.view.insert(edit, region.begin(), c)
-                self.view.insert(edit, region.end()+1, c)
+                self.view.insert(edit, region.end()+1, g_pairs[c])
             else:
                 if not region.empty():
                     self.view.erase(edit, region)
