@@ -1108,7 +1108,7 @@
 
 	{ "keys": ["ctrl+6"], "command": "next_keymap", },
 
-	{ "keys": ["ctrl+h"], "command": "left_delete",
+	{ "keys": ["ctrl+h"], "command": "left_delete_hook",
 		"context":
 		[
 			{ "key": "setting.command_mode", "operand": false },
@@ -1116,7 +1116,14 @@
 		]
 	},
 
-	{ "keys": ["ctrl+w"], "command": "delete_word",
+	{ "keys": ["backspace"], "command": "left_delete_hook",
+		"context":
+		[
+			{ "key": "setting.command_mode", "operand": false },
+		]
+	},
+
+	{ "keys": ["ctrl+w"], "command": "delete_word_hook",
 		"args":
 		{
 			"forward": false,
@@ -1128,7 +1135,7 @@
 		]
 	},
 
-	{ "keys": ["ctrl+shift+w"], "command": "delete_word",
+	{ "keys": ["ctrl+shift+w"], "command": "delete_word_hook",
 		"args":
 		{
 			"forward": true,

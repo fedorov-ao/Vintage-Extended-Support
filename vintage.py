@@ -14,9 +14,10 @@
 # Limitations
 # CapsLock does not work properly
 # Autocomplete window is not opened automatically (still accessible by Alt-/)
+# Can map key combination to character (like dead key mapping in vim)
+# Works only in insert mode (i.e. not in f or r)
 
 # TODO
-# Support "dead key" keymap, when several latin characters correspond to one mapped character
 # Eable character specification by keycode
 
 # Added registers window invoked by :reg
@@ -25,6 +26,7 @@ import sublime, sublime_plugin
 import os.path
 from os.path import dirname, realpath
 import re
+from . import buffered_keymap
 
 # Normal: Motions apply to all the characters they select
 MOTION_MODE_NORMAL = 0
@@ -56,14 +58,17 @@ class InputState:
 g_input_state = InputState()
 
 class MultiKeymapManager:
-    def __init__(self):
+    def __init__(self, dfault=lambda c : c):
         self.id = -1
         self.keymap = []
         self.current = None
+        self.dfault = dfault
     def add_keymap(self, name, keymap):
         self.keymap.append({'name' : name, 'keymap' : keymap})
     def get_name(self):
         return None if self.id == -1 else self.keymap[self.id]['name']
+    def get_keymap(self):
+        return self.current
     def next_keymap(self):
         self.id+= 1
         if self.id == len(self.keymap):
@@ -72,9 +77,9 @@ class MultiKeymapManager:
         else:
             self.current = self.keymap[self.id]['keymap']
     def map_char(self, c):
-        return self.current.get(c, c) if self.current is not None else c
+        return self.current.get(c, c) if self.current is not None else self.dfault(c)
 
-g_keymap_manager = MultiKeymapManager()
+g_keymap_manager = MultiKeymapManager(dfault=lambda c : (c, 0))
 
 def parse_keymap_file(fname):
     # let b:keymap_name = "ru"
@@ -85,16 +90,22 @@ def parse_keymap_file(fname):
 
     name = None
     keymap = {}
+    mode = 0
     try:
         with open(fname) as fin:
             for l in fin:
-               m = name_re.search(l)
-               if m is not None:
-                    name = m.group(1)
-               m = map_re.match(l)
-               if m is not None:
-                    keymap[m.group(1).lstrip('\\')] = m.group(2).lstrip('\\')
-            return {'name' : name, 'keymap' : keymap}
+                if mode == 0:
+                    if l.rstrip('\n') == 'loadkeymap':
+                        mode = 1
+                    else:
+                        m = name_re.search(l)
+                        if m is not None:
+                            name = m.group(1)
+                elif mode == 1:
+                    m = map_re.match(l)
+                    if m is not None:
+                        keymap[m.group(1).lstrip('\\')] = m.group(2).lstrip('\\')
+        return {'name' : name, 'keymap' : keymap}
     except:
         return None
 
@@ -108,12 +119,17 @@ def load_keymaps():
         return
     for kn in keymap_names:
         full_fname = os.path.join(MM_PLUGIN_DIR, 'keymap', kn + '.vim')
-        keymap = parse_keymap_file(full_fname)
-        if keymap is None:
+        keymap_data = parse_keymap_file(full_fname)
+        if keymap_data is None:
             print('No file for keymap "' + kn + '"')
             continue
-        g_keymap_manager.add_keymap(keymap['name'], keymap['keymap'])
-        print('keymap "' + keymap['name'] + '" loaded from ' + full_fname)
+        # TODO What if we need an unbuffered keymap?
+        l = [x for x in keymap_data['keymap'].items()]
+        l.sort(key=lambda x : x[0])
+        bkm = buffered_keymap.BufferedKeymap(l)
+        g_keymap_manager.add_keymap(keymap_data['name'], bkm)
+        print('keymap "' + keymap_data['name'] + '" loaded from ' + full_fname)
+        print(l)
 
 # Updates the status bar to reflect the current mode and input state
 def update_status_line(view):
@@ -379,7 +395,7 @@ class SetMotion(sublime_plugin.TextCommand):
         # Pass the character, if any, onto the motion command.
         # This is required for 'f', 't', etc
         if character is not None:
-            motion_args['character'] = g_keymap_manager.map_char(character)
+            motion_args['character'] = g_keymap_manager.map_char(character)[0]
 
         g_input_state.motion_command = motion
         g_input_state.motion_command_args = motion_args
@@ -1232,7 +1248,11 @@ g_pairs = {
 
 class InsertCharCommand(sublime_plugin.TextCommand):
     def run(self, edit, character):
-        c = g_keymap_manager.map_char(character)
+        r = g_keymap_manager.map_char(character)
+        c, i = r[0], r[1]
+        while i > 0:
+            self.view.run_command('left_delete')
+            i -= 1
         for region in self.view.sel():
             if c in g_pairs and not region.empty():
                 self.view.insert(edit, region.begin(), c)
@@ -1246,3 +1266,19 @@ class NextKeymapCommand(sublime_plugin.TextCommand):
      def run(self, edit):
         g_keymap_manager.next_keymap()
         update_status_line(self.view)
+
+class LeftDeleteHookCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        # TODO What if km has no pop() ?
+        km = g_keymap_manager.get_keymap()
+        if km is not None:
+            km.pop()
+        self.view.run_command('left_delete')
+
+class DeleteWordHookCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **kwargs):
+        # TODO What if km has no clear() ?
+        km = g_keymap_manager.get_keymap()
+        if km is not None:
+            km.clear()
+        self.view.run_command('delete_word', kwargs)
