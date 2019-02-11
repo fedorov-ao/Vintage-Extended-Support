@@ -1,3 +1,8 @@
+//axf
+//added keymapping-related keys
+//added ctrl+w, ctrl+shift+w and ctrl+h (active only in insert mode and with vintage_ctrl_keys enabled)
+//changed default ctrl+f/b to ctrl+alt+f/b
+
 [
 	{ "keys": ["left"], "command": "set_motion", "args": {
 		"motion": "vi_move_by_characters_in_line",
@@ -719,13 +724,13 @@
 		"context": [{"key": "setting.command_mode"}]
 	},
 
-	{ "keys": ["ctrl+f"], "command": "set_motion", "args": {
+	{ "keys": ["ctrl+alt+f"], "command": "set_motion", "args": {
 		"motion": "move",
 		"motion_args": {"by": "pages", "forward": true, "extend": true }},
 		"context": [{"key": "setting.command_mode"}, {"key": "setting.vintage_ctrl_keys"}]
 	},
 
-	{ "keys": ["ctrl+b"], "command": "set_motion", "args": {
+	{ "keys": ["ctrl+alt+b"], "command": "set_motion", "args": {
 		"motion": "move",
 		"motion_args": {"by": "pages", "forward": false, "extend": true }},
 		"context": [{"key": "setting.command_mode"}, {"key": "setting.vintage_ctrl_keys"}]
@@ -1093,7 +1098,7 @@
 		]
 	},
 
-	//Mapping
+	// Mapping
 	{ "keys": ["<character>"], "command": "insert_char",
 		"context":
 		[
@@ -1102,4 +1107,36 @@
 	},
 
 	{ "keys": ["ctrl+6"], "command": "next_mapping", },
+
+	{ "keys": ["ctrl+h"], "command": "left_delete",
+		"context":
+		[
+			{ "key": "setting.command_mode", "operand": false },
+			{ "key": "setting.vintage_ctrl_keys" }
+		]
+	},
+
+	{ "keys": ["ctrl+w"], "command": "delete_word",
+		"args":
+		{
+			"forward": false,
+		},
+		"context":
+		[
+			{ "key": "setting.command_mode", "operand": false },
+			{ "key": "setting.vintage_ctrl_keys" }
+		]
+	},
+
+	{ "keys": ["ctrl+shift+w"], "command": "delete_word",
+		"args":
+		{
+			"forward": true,
+		},
+		"context":
+		[
+			{ "key": "setting.command_mode", "operand": false },
+			{ "key": "setting.vintage_ctrl_keys" }
+		]
+	},
 ]
