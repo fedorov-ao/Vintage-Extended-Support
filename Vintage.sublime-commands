@@ -24,5 +24,9 @@
     {
         "caption": ":x - Save and Close",
         "command": "vi_save_and_exit"
+    },
+    {
+        "caption": ":reg - Print registers",
+        "command": "print_registers"
     }
 ]

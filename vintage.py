@@ -1118,3 +1118,12 @@ class MoveGroupFocus(sublime_plugin.WindowCommand):
             self.window.focus_group(next(matches))
         except StopIteration:
             return
+
+class PrintRegistersCommand(sublime_plugin.TextCommand):
+    def run(self, edit):
+        self.panel = self.view.window().create_output_panel('registers')
+        self.view.window().run_command('show_panel', { 'panel': 'output.registers' })
+        for name,contents in g_registers.items():
+            for t in [('\n', '^M'), ('\t', '^I')]:
+                contents = contents.replace(t[0], t[1])
+            self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})          
