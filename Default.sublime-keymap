@@ -1106,7 +1106,7 @@
 		]
 	},
 
-	{ "keys": ["ctrl+6"], "command": "next_mapping", },
+	{ "keys": ["ctrl+6"], "command": "next_keymap", },
 
 	{ "keys": ["ctrl+h"], "command": "left_delete",
 		"context":

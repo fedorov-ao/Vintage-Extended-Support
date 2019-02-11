@@ -1,22 +1,22 @@
 # axf 09.02.2019
-# Updated to support vim-like keyboard mappings
-# The idea is to switch keyboard mapping internally in Sublime text editor, not system-wide
-# Thus won't need to bloat Default.sublime-keymap file by duplicating layout-dependent mappings 
+# Updated to support vim-like keymaps
+# The idea is to switch keymap internally in Sublime text editor, not system-wide
+# Thus won't need to bloat Default.sublime-keymap file by duplicating layout-dependent keymaps 
 # Vim-based shortcuts and combinations will work naturally
 
-# Can specify several mappings
+# Can specify several keymaps
 # Usage:
-# Put vim mapping files (i.e. russian-jcukenwin.vim, kazakh-jcuken.vim) into Vintage/keymap directory
-# Add "vintage_mappings" parameter into user settings. The value of this parameter is a list of required mappings
-# (i.e. "vintage_mappings" : [ "russian-jcukenwin", "kazakh-jcuken" ])
-# Cycle through mappings by CTRL-6; the mapping is off by default and is turned off again after list is exhausted
+# Put vim keymap files (i.e. russian-jcukenwin.vim, kazakh-jcuken.vim) into Vintage/keymap directory
+# Add "vintage_keymaps" parameter into user settings. The value of this parameter is a list of required keymaps
+# (i.e. "vintage_keymaps" : [ "russian-jcukenwin", "kazakh-jcuken" ])
+# Cycle through keymaps by CTRL-6; the keymap is off by default and is turned off again after list is exhausted
 
 # Limitations
 # CapsLock does not work properly
 # Autocomplete window is not opened automatically (still accessible by Alt-/)
 
 # TODO
-# Support "dead key" mapping, when several latin characters correspond to one mapped character
+# Support "dead key" keymap, when several latin characters correspond to one mapped character
 # Eable character specification by keycode
 
 # Added registers window invoked by :reg
@@ -55,28 +55,28 @@ class InputState:
 
 g_input_state = InputState()
 
-class MultiMappingManager:
+class MultiKeymapManager:
     def __init__(self):
         self.id = -1
-        self.mappings = []
+        self.keymap = []
         self.current = None
-    def add_mapping(self, name, mapping):
-        self.mappings.append({'name' : name, 'mapping' : mapping})
+    def add_keymap(self, name, keymap):
+        self.keymap.append({'name' : name, 'keymap' : keymap})
     def get_name(self):
-        return None if self.id == -1 else self.mappings[self.id]['name']
-    def next_mapping(self):
+        return None if self.id == -1 else self.keymap[self.id]['name']
+    def next_keymap(self):
         self.id+= 1
-        if self.id == len(self.mappings):
+        if self.id == len(self.keymap):
             self.id = -1
             self.current = None
         else:
-            self.current = self.mappings[self.id]['mapping']
+            self.current = self.keymap[self.id]['keymap']
     def map_char(self, c):
         return self.current.get(c, c) if self.current is not None else c
 
-g_mapping_manager = MultiMappingManager()
+g_keymap_manager = MultiKeymapManager()
 
-def parse_mapping_file(fname):
+def parse_keymap_file(fname):
     # let b:keymap_name = "ru"
     name_re = re.compile('let\s*b\:keymap_name\s*=\s*"(.*?)"')
     # F А   CYRILLIC CAPITAL LETTER A
@@ -84,7 +84,7 @@ def parse_mapping_file(fname):
     map_re = re.compile('^(\S*)\s*(\S*)\s*.*$')
 
     name = None
-    mapping = {}
+    keymap = {}
     try:
         with open(fname) as fin:
             for l in fin:
@@ -93,27 +93,27 @@ def parse_mapping_file(fname):
                     name = m.group(1)
                m = map_re.match(l)
                if m is not None:
-                    mapping[m.group(1).lstrip('\\')] = m.group(2).lstrip('\\')
-            return {'name' : name, 'mapping' : mapping}
+                    keymap[m.group(1).lstrip('\\')] = m.group(2).lstrip('\\')
+            return {'name' : name, 'keymap' : keymap}
     except:
         return None
 
 MM_PLUGIN_DIR = dirname(realpath(__file__))
 
-def load_mappings():
+def load_keymaps():
     settings = sublime.load_settings('Preferences.sublime-settings')
-    mapping_names = settings.get('vintage_mappings')
-    if mapping_names is None or len(mapping_names) == 0:
-        print('No mappings specified')
+    keymap_names = settings.get('vintage_keymaps')
+    if keymap_names is None or len(keymap_names) == 0:
+        print('No keymaps specified')
         return
-    for mn in mapping_names:
-        full_fname = os.path.join(MM_PLUGIN_DIR, 'keymap', mn + '.vim')
-        mapping = parse_mapping_file(full_fname)
-        if mapping is None:
-            print('No file for mapping "' + mn + '"')
+    for kn in keymap_names:
+        full_fname = os.path.join(MM_PLUGIN_DIR, 'keymap', kn + '.vim')
+        keymap = parse_keymap_file(full_fname)
+        if keymap is None:
+            print('No file for keymap "' + kn + '"')
             continue
-        g_mapping_manager.add_mapping(mapping['name'], mapping['mapping'])
-        print('Mapping "' + mapping['name'] + '" loaded from ' + full_fname)
+        g_keymap_manager.add_keymap(keymap['name'], keymap['keymap'])
+        print('keymap "' + keymap['name'] + '" loaded from ' + full_fname)
 
 # Updates the status bar to reflect the current mode and input state
 def update_status_line(view):
@@ -145,9 +145,9 @@ def update_status_line(view):
     else:
         desc = ['INSERT MODE']
 
-    mapping_name = g_mapping_manager.get_name()
-    if mapping_name is not None:
-        desc.append(mapping_name)
+    keymap_name = g_keymap_manager.get_name()
+    if keymap_name is not None:
+        desc.append(keymap_name)
 
     view.set_status('mode', ' - '.join(desc))
 
@@ -193,7 +193,7 @@ def plugin_unloaded():
             v.erase_status('mode')
 
 def plugin_loaded():
-    load_mappings()
+    load_keymaps()
     for w in sublime.windows():
         for v in w.views():
             if v.settings().get("vintage_start_in_command_mode"):
@@ -379,7 +379,7 @@ class SetMotion(sublime_plugin.TextCommand):
         # Pass the character, if any, onto the motion command.
         # This is required for 'f', 't', etc
         if character is not None:
-            motion_args['character'] = g_mapping_manager.map_char(character)
+            motion_args['character'] = g_keymap_manager.map_char(character)
 
         g_input_state.motion_command = motion
         g_input_state.motion_command_args = motion_args
@@ -1021,7 +1021,7 @@ class PasteFromRegisterCommand(sublime_plugin.TextCommand):
 
 class ReplaceCharacter(sublime_plugin.TextCommand):
     def run(self, edit, character):
-        character = g_mapping_manager.map_char(character)
+        character = g_keymap_manager.map_char(character)
         new_sel = []
         created_new_line = False
         for s in reversed(self.view.sel()):
@@ -1232,7 +1232,7 @@ g_pairs = {
 
 class InsertCharCommand(sublime_plugin.TextCommand):
     def run(self, edit, character):
-        c = g_mapping_manager.map_char(character)
+        c = g_keymap_manager.map_char(character)
         for region in self.view.sel():
             if c in g_pairs and not region.empty():
                 self.view.insert(edit, region.begin(), c)
@@ -1242,7 +1242,7 @@ class InsertCharCommand(sublime_plugin.TextCommand):
                     self.view.erase(edit, region)
                 self.view.insert(edit, region.begin(), c)
 
-class NextMappingCommand(sublime_plugin.TextCommand):
+class NextKeymapCommand(sublime_plugin.TextCommand):
      def run(self, edit):
-        g_mapping_manager.next_mapping()
+        g_keymap_manager.next_keymap()
         update_status_line(self.view)
