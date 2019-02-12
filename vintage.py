@@ -62,6 +62,8 @@ class MultiKeymapManager:
         self.current = None
     def add_keymap(self, name, keymap):
         self.keymap.append({'name' : name, 'keymap' : keymap})
+    def purge_keymaps(self):
+        self.keymap.clear()
     def get_name(self):
         return None if self.id == -1 else self.keymap[self.id]['name']
     def next_keymap(self):
@@ -101,6 +103,7 @@ def parse_keymap_file(fname):
 MM_PLUGIN_DIR = dirname(realpath(__file__))
 
 def load_keymaps():
+    g_keymap_manager.purge_keymaps()
     settings = sublime.load_settings('Preferences.sublime-settings')
     keymap_names = settings.get('vintage_keymaps')
     if keymap_names is None or len(keymap_names) == 0:
@@ -186,6 +189,8 @@ def string_to_motion_mode(mode):
 # Called when the plugin is unloaded (e.g., perhaps it just got added to
 # ignored_packages). Ensure files aren't left in command mode.
 def plugin_unloaded():
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    settings.clear_on_change('vintage_keymaps')
     for w in sublime.windows():
         for v in w.views():
             v.settings().set('command_mode', False)
@@ -193,9 +198,9 @@ def plugin_unloaded():
             v.erase_status('mode')
 
 def plugin_loaded():
+    load_keymaps()
     settings = sublime.load_settings('Preferences.sublime-settings')
     settings.add_on_change('vintage_keymaps', load_keymaps)
-    load_keymaps()
     for w in sublime.windows():
         for v in w.views():
             if v.settings().get("vintage_start_in_command_mode"):
