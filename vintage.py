@@ -209,6 +209,8 @@ def plugin_unloaded():
             v.erase_status('mode')
 
 def plugin_loaded():
+    settings = sublime.load_settings('Preferences.sublime-settings')
+    settings.add_on_change('vintage_keymaps', load_keymaps)
     load_keymaps()
     for w in sublime.windows():
         for v in w.views():
