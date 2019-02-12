@@ -1037,7 +1037,7 @@ class PasteFromRegisterCommand(sublime_plugin.TextCommand):
 
 class ReplaceCharacter(sublime_plugin.TextCommand):
     def run(self, edit, character):
-        character = g_keymap_manager.map_char(character)
+        character = g_keymap_manager.map_char(character)[0]
         new_sel = []
         created_new_line = False
         for s in reversed(self.view.sel()):
