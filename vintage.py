@@ -81,11 +81,14 @@ class MultiKeymapManager:
     def get_name(self):
         return self.keymaps[self.id]['name']
     def get_keymap(self):
+        assert self.current is not None
         return self.current
     def next_keymap(self):
         self.id += 1
         if self.id >= len(self.keymaps):
             self.id = 0
+        assert self.current is not None
+        self.current.clear()
         self.current = self.keymaps[self.id]['keymap']
     def map_char(self, c):
         assert self.current is not None
@@ -203,6 +206,7 @@ def reset_input_state(view, reset_motion_mode = True):
 
 class ViCancelCurrentAction(sublime_plugin.TextCommand):
     def run(self, action, action_args = {}, motion_mode = None, description = None):
+        g_keymap_manager.get_keymap().clear()
         reset_input_state(self.view, True)
 
 def string_to_motion_mode(mode):
@@ -1287,16 +1291,10 @@ class NextKeymapCommand(sublime_plugin.TextCommand):
 
 class LeftDeleteHookCommand(sublime_plugin.TextCommand):
     def run(self, edit):
-        # TODO What if km has no pop() ?
-        km = g_keymap_manager.get_keymap()
-        if km is not None:
-            km.pop()
+        g_keymap_manager.get_keymap().pop()
         self.view.run_command('left_delete')
 
 class DeleteWordHookCommand(sublime_plugin.TextCommand):
     def run(self, edit, **kwargs):
-        # TODO What if km has no clear() ?
-        km = g_keymap_manager.get_keymap()
-        if km is not None:
-            km.clear()
+        g_keymap_manager.get_keymap().clear()
         self.view.run_command('delete_word', kwargs)
