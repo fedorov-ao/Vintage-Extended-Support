@@ -189,6 +189,7 @@ def set_motion_mode(view, mode):
     update_status_line(view)
 
 def reset_input_state(view, reset_motion_mode = True):
+    g_keymap_manager.get_keymap().clear()
     global g_input_state
     g_input_state.prefix_repeat_digits = []
     g_input_state.action_command = None
@@ -206,7 +207,6 @@ def reset_input_state(view, reset_motion_mode = True):
 
 class ViCancelCurrentAction(sublime_plugin.TextCommand):
     def run(self, action, action_args = {}, motion_mode = None, description = None):
-        g_keymap_manager.get_keymap().clear()
         reset_input_state(self.view, True)
 
 def string_to_motion_mode(mode):
