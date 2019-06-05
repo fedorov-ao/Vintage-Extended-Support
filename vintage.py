@@ -189,7 +189,6 @@ def set_motion_mode(view, mode):
     update_status_line(view)
 
 def reset_input_state(view, reset_motion_mode = True):
-    g_keymap_manager.get_keymap().clear()
     global g_input_state
     g_input_state.prefix_repeat_digits = []
     g_input_state.action_command = None
@@ -793,6 +792,7 @@ class EnterInsertMode(sublime_plugin.TextCommand):
 
 class ExitInsertMode(sublime_plugin.TextCommand):
     def run_(self, edit_token, args):
+        g_keymap_manager.get_keymap().clear()
         edit = self.view.begin_edit(edit_token, self.name(), args)
         try:
             self.run(edit)
