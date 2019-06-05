@@ -57,31 +57,41 @@ class InputState:
 
 g_input_state = InputState()
 
+class Keymap:
+    def get(self, c, repl=None):
+        return (c, 0)
+    def pop(self):
+        pass
+    def clear(self):
+        pass
+
 class MultiKeymapManager:
-    def __init__(self, dfault=lambda c : c):
-        self.id = -1
-        self.keymap = []
+    def __init__(self):
+        self.id = 0
+        self.keymaps = []
         self.current = None
-        self.dfault = dfault
     def add_keymap(self, name, keymap):
-        self.keymap.append({'name' : name, 'keymap' : keymap})
+        self.keymaps.append({'name' : name, 'keymap' : keymap})
+        self.id = 0
+        self.current = self.keymaps[0]['keymap']
     def purge_keymaps(self):
-        self.keymap.clear()
+        self.keymaps.clear()
+        self.id = 0
+        self.current = None
     def get_name(self):
-        return None if self.id == -1 else self.keymap[self.id]['name']
+        return self.keymaps[self.id]['name']
     def get_keymap(self):
         return self.current
     def next_keymap(self):
-        self.id+= 1
-        if self.id == len(self.keymap):
-            self.id = -1
-            self.current = None
-        else:
-            self.current = self.keymap[self.id]['keymap']
+        self.id += 1
+        if self.id >= len(self.keymaps):
+            self.id = 0
+        self.current = self.keymaps[self.id]['keymap']
     def map_char(self, c):
-        return self.current.get(c, c) if self.current is not None else self.dfault(c)
+        assert self.current is not None
+        return self.current.get(c, c)
 
-g_keymap_manager = MultiKeymapManager(dfault=lambda c : (c, 0))
+g_keymap_manager = MultiKeymapManager()
 
 def parse_keymap_file(fname):
     # let b:keymap_name = "ru"
@@ -115,6 +125,7 @@ MM_PLUGIN_DIR = dirname(realpath(__file__))
 
 def load_keymaps():
     g_keymap_manager.purge_keymaps()
+    g_keymap_manager.add_keymap(None, Keymap())
     settings = sublime.load_settings('Preferences.sublime-settings')
     keymap_names = settings.get('vintage_keymaps')
     if keymap_names is None or len(keymap_names) == 0:
