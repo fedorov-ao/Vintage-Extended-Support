@@ -1257,7 +1257,7 @@ class PrintRegistersCommand(sublime_plugin.TextCommand):
         for name,contents in g_registers.items():
             for t in [('\n', '^M'), ('\t', '^I')]:
                 contents = contents.replace(t[0], t[1])
-        self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})
+            self.panel.run_command('append', {'characters' : '{}: {}\n'.format(name, contents)})
 
 g_pairs = {
     '"' : '"',
